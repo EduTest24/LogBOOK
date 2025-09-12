@@ -1,103 +1,262 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Moon, Menu, X, Calendar, PlusCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import { useUser, UserButton } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+
+export default function LogBook() {
+  const { isSignedIn } = useUser();
+  const router = useRouter();
+
+  const [thought, setThought] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [logs, setLogs] = useState([]); // full logs from DB
+  const [selectedDate, setSelectedDate] = useState(
+    new Date().toISOString().split("T")[0] // YYYY-MM-DD
+  );
+  const [userSynced, setUserSynced] = useState(false);
+
+  // 🔹 Sync user into DB when signed in
+  useEffect(() => {
+    if (isSignedIn && !userSynced) {
+      fetch("/api/users")
+        .then((res) => res.json())
+        .then((data) => {
+          console.log("✅ User synced to DB:", data);
+          setUserSynced(true);
+        })
+        .catch((err) => console.error("❌ User sync error:", err));
+    }
+  }, [isSignedIn, userSynced]);
+
+  // 🔹 Fetch logs for the user
+  async function fetchLogs() {
+    if (!isSignedIn) return;
+    try {
+      const res = await fetch("/api/logs");
+      const data = await res.json();
+      setLogs(data);
+    } catch (err) {
+      console.error("❌ Error fetching logs:", err);
+    }
+  }
+
+  useEffect(() => {
+    fetchLogs();
+  }, [isSignedIn]);
+
+  // 🔹 Save a new thought
+  async function handleSave() {
+    if (!isSignedIn) {
+      router.push("/sign-in");
+      return;
+    }
+    if (!thought.trim()) return;
+
+    try {
+      const res = await fetch("/api/logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: thought, date: selectedDate }),
+      });
+
+      if (!res.ok) throw new Error("Failed to save thought");
+
+      const updatedLog = await res.json();
+
+      // merge/update the logs state
+      setLogs((prev) => {
+        const others = prev.filter((l) => l.date !== updatedLog.date);
+        return [...others, updatedLog].sort((a, b) =>
+          a.date < b.date ? 1 : -1
+        ); // keep sorted
+      });
+
+      setThought("");
+    } catch (err) {
+      console.error("❌ Error saving thought:", err);
+    }
+  }
+
+  // 🔹 Available dates for sidebar
+  const availableDates = logs
+    .map((log) => log.date)
+    .sort()
+    .reverse();
+
+  // 🔹 Thoughts for selected date
+  const selectedLog = logs.find((l) => l.date === selectedDate);
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen flex bg-slate-950 text-slate-100 relative overflow-hidden">
+      {/* Background grid */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:24px_24px] opacity-30 pointer-events-none" />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Sidebar Desktop */}
+      <aside className="hidden md:flex flex-col w-64 bg-slate-900 border-r border-slate-800 p-4 space-y-4 z-20">
+        <div className="flex items-center gap-2 text-indigo-400 font-bold text-lg">
+          <Moon size={20} /> LogBook
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+        <nav className="space-y-2">
+          {availableDates.map((date) => (
+            <Button
+              key={date}
+              variant="ghost"
+              className={`w-full justify-start ${
+                selectedDate === date
+                  ? "text-indigo-400 bg-slate-800"
+                  : "text-slate-300 hover:text-indigo-400"
+              }`}
+              onClick={() => setSelectedDate(date)}
+            >
+              <Calendar size={16} className="mr-2" /> {date}
+            </Button>
+          ))}
+        </nav>
+      </aside>
+
+      {/* Sidebar Mobile */}
+      {sidebarOpen && (
+        <motion.div
+          initial={{ x: -300 }}
+          animate={{ x: 0 }}
+          exit={{ x: -300 }}
+          className="fixed inset-y-0 left-0 w-64 bg-slate-900 border-r border-slate-800 p-4 space-y-4 z-30 md:hidden"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-indigo-400 font-bold text-lg">
+              <Moon size={20} /> LogBook
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => setSidebarOpen(false)}
+              className="text-slate-300 hover:text-indigo-400"
+            >
+              <X size={20} />
+            </Button>
+          </div>
+          <nav className="space-y-2">
+            {availableDates.map((date) => (
+              <Button
+                key={date}
+                variant="ghost"
+                className={`w-full justify-start ${
+                  selectedDate === date
+                    ? "text-indigo-400 bg-slate-800"
+                    : "text-slate-300 hover:text-indigo-400"
+                }`}
+                onClick={() => {
+                  setSelectedDate(date);
+                  setSidebarOpen(false);
+                }}
+              >
+                <Calendar size={16} className="mr-2" /> {date}
+              </Button>
+            ))}
+          </nav>
+        </motion.div>
+      )}
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col relative z-10">
+        {/* Header */}
+        <header className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md shadow-md">
+          <h1 className="text-xl font-semibold flex items-center gap-2 text-slate-200">
+            <span className="p-2 rounded-lg bg-indigo-600/20 text-indigo-400">
+              <Moon size={18} />
+            </span>
+            <span className="tracking-wide">Daily Thoughts</span>
+          </h1>
+
+          {/* Right: Auth */}
+          <div>
+            {isSignedIn ? (
+              <UserButton
+                afterSignOutUrl="/sign-in"
+                appearance={{
+                  elements: {
+                    avatarBox:
+                      "ring-2 ring-indigo-500 hover:ring-indigo-400 transition-all",
+                  },
+                }}
+              />
+            ) : (
+              <Button
+                className="bg-indigo-600 hover:bg-indigo-500 text-white shadow-md hover:shadow-lg transition-all"
+                onClick={() => router.push("/sign-in")}
+              >
+                Login
+              </Button>
+            )}
+          </div>
+        </header>
+
+        {/* Logs Section */}
+        <main className="flex-1 overflow-y-auto p-4 pb-28">
+          <h2 className="text-lg font-medium text-slate-400 mb-4">
+            {selectedDate}
+          </h2>
+          <div className="space-y-4">
+            {selectedLog?.thoughts?.length > 0 ? (
+              selectedLog.thoughts.map((t, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card className="bg-slate-900 border-slate-800 hover:border-indigo-500 transition">
+                    <CardContent className="p-4">
+                      <p className="text-slate-200">{t.text}</p>
+                      <p className="text-sm text-slate-500 mt-2">
+                        {new Date(t.timestamp).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))
+            ) : (
+              <p className="text-slate-500">No logs for this day.</p>
+            )}
+          </div>
+        </main>
+
+        {/* Writing Area */}
+        <div className="sticky bottom-0 left-0 right-0 border-t border-slate-800 bg-slate-900/70 backdrop-blur-md p-4">
+          <div className="flex flex-col gap-3">
+            <Textarea
+              placeholder={
+                isSignedIn
+                  ? "Write your thought..."
+                  : "Login to start writing your thoughts..."
+              }
+              value={thought}
+              onChange={(e) => setThought(e.target.value)}
+              disabled={!isSignedIn}
+              className={`bg-slate-950/60 text-slate-100 border-slate-700 focus:ring-2 focus:ring-indigo-500 backdrop-blur-sm ${
+                !isSignedIn ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            />
+            <motion.div whileTap={{ scale: 0.97 }}>
+              <Button
+                onClick={handleSave}
+                disabled={!isSignedIn}
+                className="w-full flex items-center justify-center gap-2 bg-indigo-600/90 hover:bg-indigo-500/90 backdrop-blur-sm shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <PlusCircle size={18} /> Save Thought
+              </Button>
+            </motion.div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
