@@ -2,7 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Moon, Menu, X, Calendar, PlusCircle } from "lucide-react";
+import {
+  Moon,
+  Menu,
+  X,
+  Calendar,
+  PlusCircle,
+  Sparkles,
+  Sparkle,
+  Send,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
@@ -94,51 +103,12 @@ export default function LogBook() {
 
   return (
     <div className="min-h-screen flex bg-slate-950 text-slate-100 relative overflow-hidden">
-      {/* Background grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:24px_24px] opacity-30 pointer-events-none" />
 
-      {/* Sidebar Desktop */}
-      <aside className="hidden md:flex flex-col w-64 bg-slate-900 border-r border-slate-800 p-4 space-y-4 z-20">
-        <div className="flex items-center gap-2 text-indigo-400 font-bold text-lg">
-          <Moon size={20} /> LogBook
-        </div>
-        <nav className="space-y-2">
-          {availableDates.map((date) => (
-            <Button
-              key={date}
-              variant="ghost"
-              className={`w-full justify-start ${
-                selectedDate === date
-                  ? "text-indigo-400 bg-slate-800"
-                  : "text-slate-300 hover:text-indigo-400"
-              }`}
-              onClick={() => setSelectedDate(date)}
-            >
-              <Calendar size={16} className="mr-2" /> {date}
-            </Button>
-          ))}
-        </nav>
-      </aside>
-
-      {/* Sidebar Mobile */}
-      {sidebarOpen && (
-        <motion.div
-          initial={{ x: -300 }}
-          animate={{ x: 0 }}
-          exit={{ x: -300 }}
-          className="fixed inset-y-0 left-0 w-64 bg-slate-900 border-r border-slate-800 p-4 space-y-4 z-30 md:hidden"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-indigo-400 font-bold text-lg">
-              <Moon size={20} /> LogBook
-            </div>
-            <Button
-              variant="ghost"
-              onClick={() => setSidebarOpen(false)}
-              className="text-slate-300 hover:text-indigo-400"
-            >
-              <X size={20} />
-            </Button>
+      <aside className="hidden md:flex flex-col w-64 bg-slate-900 border-r border-slate-800 p-4 z-20">
+        <div className="flex flex-col flex-1 space-y-4">
+          <div className="flex items-center gap-2 text-indigo-400 font-bold text-lg">
+            <Moon size={20} /> LogBook
           </div>
           <nav className="space-y-2">
             {availableDates.map((date) => (
@@ -150,28 +120,99 @@ export default function LogBook() {
                     ? "text-indigo-400 bg-slate-800"
                     : "text-slate-300 hover:text-indigo-400"
                 }`}
-                onClick={() => {
-                  setSelectedDate(date);
-                  setSidebarOpen(false);
-                }}
+                onClick={() => setSelectedDate(date)}
               >
                 <Calendar size={16} className="mr-2" /> {date}
               </Button>
             ))}
           </nav>
+        </div>
+
+        {/* Agent Button at Bottom */}
+        <Button
+          onClick={() => router.push("/agent")}
+          className="mt-4 w-full flex items-center justify-center gap-2 bg-indigo-600/90 hover:bg-indigo-500/90"
+        >
+          <Sparkles size={18} /> Agent
+        </Button>
+      </aside>
+
+      {/* Sidebar Mobile */}
+      {sidebarOpen && (
+        <motion.div
+          initial={{ x: -300 }}
+          animate={{ x: 0 }}
+          exit={{ x: -300 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+          className="fixed inset-y-0 left-0 w-64 bg-slate-900 border-r border-slate-800 p-4 flex flex-col justify-between z-30 md:hidden"
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-indigo-400 font-bold text-lg">
+                <Moon size={20} /> LogBook
+              </div>
+              <Button
+                variant="ghost"
+                onClick={() => setSidebarOpen(false)}
+                className="text-slate-300 hover:text-indigo-400"
+              >
+                <X size={20} />
+              </Button>
+            </div>
+            <nav className="space-y-2">
+              {availableDates.map((date) => (
+                <Button
+                  key={date}
+                  variant="ghost"
+                  className={`w-full justify-start ${
+                    selectedDate === date
+                      ? "text-indigo-400 bg-slate-800"
+                      : "text-slate-300 hover:text-indigo-400"
+                  }`}
+                  onClick={() => {
+                    setSelectedDate(date);
+                    setSidebarOpen(false);
+                  }}
+                >
+                  <Calendar size={16} className="mr-2" /> {date}
+                </Button>
+              ))}
+            </nav>
+          </div>
+
+          {/* Agent Button at Bottom */}
+          <Button
+            onClick={() => {
+              setSidebarOpen(false);
+              router.push("/agent");
+            }}
+            className="mt-4 w-full flex items-center justify-center gap-2 bg-indigo-600/90 hover:bg-indigo-500/90"
+          >
+            <Sparkles size={18} /> Agent
+          </Button>
         </motion.div>
       )}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col relative z-10">
-        {/* Header */}
         <header className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md shadow-md">
-          <h1 className="text-xl font-semibold flex items-center gap-2 text-slate-200">
-            <span className="p-2 rounded-lg bg-indigo-600/20 text-indigo-400">
-              <Moon size={18} />
-            </span>
-            <span className="tracking-wide">Daily Thoughts</span>
-          </h1>
+          <div className="flex items-center gap-3">
+            {/* Mobile Sidebar Toggle Button */}
+            <Button
+              variant="ghost"
+              className="md:hidden text-slate-300 hover:text-indigo-400"
+              onClick={() => setSidebarOpen(true)}
+            >
+              <Menu size={22} />
+            </Button>
+
+            <h1 className="text-xl font-semibold flex items-center gap-2 text-slate-200">
+              <span className="p-2 rounded-lg bg-indigo-600/20 text-indigo-400">
+                <Moon size={18} />
+              </span>
+              <span className="tracking-wide">Daily Thoughts</span>
+            </h1>
+          </div>
 
           {/* Right: Auth */}
           <div>
@@ -196,24 +237,29 @@ export default function LogBook() {
           </div>
         </header>
 
-        {/* Logs Section */}
-        <main className="flex-1 overflow-y-auto p-4 pb-28">
-          <h2 className="text-lg font-medium text-slate-400 mb-4">
+        <main className="flex-1 overflow-y-auto p-6 pb-32 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 bg-grid-slate-800/[0.04]">
+          {/* Date Heading */}
+          <h2 className="text-2xl font-semibold text-slate-300 mb-6 tracking-wide">
             {selectedDate}
           </h2>
-          <div className="space-y-4">
+
+          {/* Logs Section */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {selectedLog?.thoughts?.length > 0 ? (
               selectedLog.thoughts.map((t, idx) => (
                 <motion.div
                   key={idx}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.3, delay: idx * 0.05 }}
                 >
-                  <Card className="bg-slate-900 border-slate-800 hover:border-indigo-500 transition">
-                    <CardContent className="p-4">
-                      <p className="text-slate-200">{t.text}</p>
-                      <p className="text-sm text-slate-500 mt-2">
+                  <Card className="bg-slate-900/60 border border-slate-800 hover:border-indigo-400 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300 rounded-xl overflow-hidden p-1">
+                    <CardContent className="p-4 flex flex-col justify-between h-full">
+                      <p className="text-slate-200 text-sm leading-snug line-clamp-4">
+                        {t.text}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-3 flex items-center gap-2">
+                        <span className="inline-block w-2 h-2 rounded-full bg-indigo-500"></span>
                         {new Date(t.timestamp).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -224,36 +270,68 @@ export default function LogBook() {
                 </motion.div>
               ))
             ) : (
-              <p className="text-slate-500">No logs for this day.</p>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="flex flex-col items-center justify-center h-64 rounded-2xl border border-slate-800/60 bg-slate-900/40 text-center p-6 space-y-3 col-span-full"
+              >
+                <h3 className="text-lg font-medium text-slate-300">
+                  {isSignedIn ? "No logs for this day" : "Welcome!"}
+                </h3>
+                <p className="text-slate-500 text-sm">
+                  {isSignedIn
+                    ? "Your thoughts will appear here once you add them."
+                    : "Login or sign up to start recording your thoughts and keep your daily journal."}
+                </p>
+                {!isSignedIn && (
+                  <button
+                    onClick={() => router.push("/sign-in")}
+                    className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/30 transition"
+                  >
+                    Login to Start
+                  </button>
+                )}
+              </motion.div>
             )}
           </div>
         </main>
 
         {/* Writing Area */}
         <div className="sticky bottom-0 left-0 right-0 border-t border-slate-800 bg-slate-900/70 backdrop-blur-md p-4">
-          <div className="flex flex-col gap-3">
-            <Textarea
-              placeholder={
-                isSignedIn
-                  ? "Write your thought..."
-                  : "Login to start writing your thoughts..."
-              }
-              value={thought}
-              onChange={(e) => setThought(e.target.value)}
-              disabled={!isSignedIn}
-              className={`bg-slate-950/60 text-slate-100 border-slate-700 focus:ring-2 focus:ring-indigo-500 backdrop-blur-sm ${
-                !isSignedIn ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-            />
-            <motion.div whileTap={{ scale: 0.97 }}>
-              <Button
-                onClick={handleSave}
+          <div className="relative max-w-3xl mx-auto">
+            {/* Input Box with Button Inside */}
+            <div className="relative">
+              <Textarea
+                placeholder={
+                  isSignedIn
+                    ? "Write your thought..."
+                    : "Login to start writing your thoughts..."
+                }
+                value={thought}
+                onChange={(e) => setThought(e.target.value)}
                 disabled={!isSignedIn}
-                className="w-full flex items-center justify-center gap-2 bg-indigo-600/90 hover:bg-indigo-500/90 backdrop-blur-sm shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                rows={3}
+                className={`w-full pr-14 rounded-2xl px-4 py-3 bg-slate-950/70 text-slate-100 border border-slate-700/70 placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 resize-none ${
+                  !isSignedIn ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              />
+
+              {/* Floating Send Button */}
+              <motion.div
+                whileTap={{ scale: 0.9 }}
+                className="absolute bottom-3 right-3"
               >
-                <PlusCircle size={18} /> Save Thought
-              </Button>
-            </motion.div>
+                <Button
+                  size="icon"
+                  onClick={handleSave}
+                  disabled={!isSignedIn}
+                  className="h-10 w-10 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 shadow-md shadow-indigo-600/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Send size={18} className="text-white" />
+                </Button>
+              </motion.div>
+            </div>
           </div>
         </div>
       </div>
