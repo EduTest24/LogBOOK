@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import ReactMarkdown from "react-markdown";
 
 export default function AgentAssistant() {
   const [prompt, setPrompt] = useState("");
@@ -205,7 +206,7 @@ export default function AgentAssistant() {
 
   return (
     <div className="min-h-screen flex bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100">
-      {/* Overlay */}
+      {/* Overlay for Mobile */}
       {!isDesktop && sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
@@ -218,10 +219,10 @@ export default function AgentAssistant() {
         initial={false}
         animate={{ x: targetX }}
         transition={transition}
-        className="fixed inset-y-0 left-0 w-64 bg-slate-900/95 border-r border-slate-800 z-50 flex flex-col md:static md:z-auto"
+        className="fixed inset-y-0 left-0 w-64 h-screen bg-slate-900/95 border-r border-slate-800 z-50 flex flex-col"
       >
         {/* Header */}
-        <div className="px-4 py-3 flex justify-between items-center border-b border-slate-800">
+        <div className="px-4 py-3 flex justify-between items-center border-b border-slate-800 shrink-0">
           <h2 className="text-base font-semibold text-indigo-300 flex items-center gap-2">
             <Bot size={18} /> Chats
           </h2>
@@ -229,7 +230,7 @@ export default function AgentAssistant() {
             <Button
               onClick={createChat}
               size="icon"
-              className="bg-indigo-600 hover:bg-indigo-500"
+              className="bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-md hover:shadow-indigo-500/20 transition"
             >
               <Plus size={14} />
             </Button>
@@ -244,8 +245,8 @@ export default function AgentAssistant() {
           </div>
         </div>
 
-        {/* Chats */}
-        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-2">
+        {/* Chats (scrollable) */}
+        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-2 custom-scrollbar">
           {chats
             .sort((a, b) => Number(b.pinned) - Number(a.pinned))
             .map((chat) => (
@@ -256,10 +257,10 @@ export default function AgentAssistant() {
                   setMessages([]);
                   if (!isDesktop) setSidebarOpen(false);
                 }}
-                className={`cursor-pointer text-sm p-1 ${
+                className={`cursor-pointer text-sm p-1 transition-all duration-200 ${
                   activeChat === chat._id
-                    ? "bg-slate-800 border-indigo-500"
-                    : "bg-slate-900/70 hover:bg-slate-800/80"
+                    ? "bg-slate-800 border-0 shadow-md shadow-indigo-500/10"
+                    : "bg-slate-900/70 border-0 hover:bg-slate-800/80"
                 }`}
               >
                 <CardContent className="flex justify-between items-center p-2">
@@ -268,7 +269,7 @@ export default function AgentAssistant() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-6 w-6"
+                      className="h-6 w-6 hover:bg-slate-800/60 rounded-md"
                       onClick={(e) => {
                         e.stopPropagation();
                         togglePin(chat._id);
@@ -276,13 +277,15 @@ export default function AgentAssistant() {
                     >
                       <Pin
                         size={14}
-                        className={chat.pinned ? "text-yellow-400" : ""}
+                        className={
+                          chat.pinned ? "text-yellow-400" : "text-slate-400"
+                        }
                       />
                     </Button>
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-6 w-6"
+                      className="h-6 w-6 hover:bg-slate-800/60 rounded-md"
                       onClick={(e) => {
                         e.stopPropagation();
                         deleteChat(chat._id);
@@ -298,9 +301,9 @@ export default function AgentAssistant() {
       </motion.aside>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md shadow-md flex items-center justify-between">
+      <div className="flex-1 flex flex-col relative md:ml-64">
+        {/* Fixed Header */}
+        <div className="sticky top-0 z-20 px-6 p-3 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md shadow-md flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Button
               size="icon"
@@ -349,14 +352,14 @@ export default function AgentAssistant() {
                       isUser ? "justify-end" : "justify-start"
                     }`}
                   >
-                    {/* Agent icon (left) */}
+                    {/* Agent icon */}
                     {!isUser && (
                       <div className="w-9 h-9 flex items-center justify-center rounded-full bg-slate-800 text-indigo-300">
                         <Bot size={18} />
                       </div>
                     )}
 
-                    {/* Message box */}
+                    {/* Message */}
                     <div
                       className={`max-w-md px-4 py-2 rounded-lg shadow-sm text-sm ${
                         isUser
@@ -364,14 +367,17 @@ export default function AgentAssistant() {
                           : "bg-slate-800/80 text-slate-200"
                       }`}
                     >
-                      <p className="whitespace-pre-wrap">{m.content}</p>
+                      <div className="prose prose-invert max-w-none text-slate-200 prose-p:mb-2 prose-strong:text-indigo-300 prose-li:marker:text-indigo-400">
+                        <ReactMarkdown>{m.content}</ReactMarkdown>
+                      </div>
+
                       <div className="text-xs mt-1 flex items-center gap-1 opacity-60">
                         <Calendar size={12} />
                         {new Date(m.createdAt).toLocaleTimeString()}
                       </div>
                     </div>
 
-                    {/* User icon (right) */}
+                    {/* User icon */}
                     {isUser && (
                       <div className="w-9 h-9 flex items-center justify-center rounded-full bg-indigo-600 text-white">
                         <User size={18} />
@@ -381,7 +387,7 @@ export default function AgentAssistant() {
                 );
               })}
 
-              {/* AI typing state */}
+              {/* AI typing */}
               {aiTyping && (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -426,8 +432,8 @@ export default function AgentAssistant() {
           )}
         </div>
 
-        {/* Input */}
-        <div className="border-t border-slate-800 bg-slate-900/80 px-4 py-3">
+        {/* Fixed Input */}
+        <div className="sticky bottom-0 z-20 border-t border-slate-800 bg-slate-900/80 backdrop-blur-md px-4 py-3">
           <div className="max-w-2xl mx-auto flex items-center gap-2 bg-slate-950/70 rounded-xl px-3 py-2 shadow-inner border border-slate-800">
             <Input
               placeholder="Type your question..."

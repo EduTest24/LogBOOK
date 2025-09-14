@@ -29,6 +29,7 @@ export default function LogBook() {
     new Date().toISOString().split("T")[0] // YYYY-MM-DD
   );
   const [userSynced, setUserSynced] = useState(false);
+  const [fabExpanded, setFabExpanded] = useState(false);
 
   // 🔹 Sync user into DB when signed in
   useEffect(() => {
@@ -101,16 +102,22 @@ export default function LogBook() {
   // 🔹 Thoughts for selected date
   const selectedLog = logs.find((l) => l.date === selectedDate);
 
+  // inside component
+  const todayDate = new Date().toISOString().split("T")[0];
+  const isToday = selectedDate === todayDate;
+
   return (
-    <div className="min-h-screen flex bg-slate-950 text-slate-100 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-950 text-slate-100 relative overflow-hidden flex">
+      {/* Background Grid */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:24px_24px] opacity-30 pointer-events-none" />
 
-      <aside className="hidden md:flex flex-col w-64 bg-slate-900 border-r border-slate-800 p-4 z-20">
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex flex-col w-64 bg-slate-900 border-r border-slate-800 p-4 z-20 fixed inset-y-0 left-0">
         <div className="flex flex-col flex-1 space-y-4">
           <div className="flex items-center gap-2 text-indigo-400 font-bold text-lg">
             <Moon size={20} /> LogBook
           </div>
-          <nav className="space-y-2">
+          <nav className="space-y-2 overflow-y-auto flex-1">
             {availableDates.map((date) => (
               <Button
                 key={date}
@@ -137,7 +144,7 @@ export default function LogBook() {
         </Button>
       </aside>
 
-      {/* Sidebar Mobile */}
+      {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
         <motion.div
           initial={{ x: -300 }}
@@ -159,7 +166,7 @@ export default function LogBook() {
                 <X size={20} />
               </Button>
             </div>
-            <nav className="space-y-2">
+            <nav className="space-y-2 overflow-y-auto flex-1">
               {availableDates.map((date) => (
                 <Button
                   key={date}
@@ -193,9 +200,10 @@ export default function LogBook() {
         </motion.div>
       )}
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col relative z-10">
-        <header className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md shadow-md">
+      {/* Main Content Wrapper */}
+      <div className="flex-1 flex flex-col md:ml-64 relative z-10">
+        {/* Fixed Header */}
+        <header className="fixed top-0 left-0 right-0 md:left-64 z-20 flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/80 backdrop-blur-md shadow-md">
           <div className="flex items-center gap-3">
             {/* Mobile Sidebar Toggle Button */}
             <Button
@@ -237,7 +245,8 @@ export default function LogBook() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6 pb-32 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 bg-grid-slate-800/[0.04]">
+        {/* Scrollable Main Section */}
+        <main className="flex-1 overflow-y-auto p-6 pb-40 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 bg-grid-slate-800/[0.04] mt-[72px]">
           {/* Date Heading */}
           <h2 className="text-2xl font-semibold text-slate-300 mb-6 tracking-wide">
             {selectedDate}
@@ -284,6 +293,26 @@ export default function LogBook() {
                     ? "Your thoughts will appear here once you add them."
                     : "Login or sign up to start recording your thoughts and keep your daily journal."}
                 </p>
+
+                {/* 🚀 New Write for Today button */}
+                {isSignedIn && !isToday && (
+                  <Button
+                    onClick={() => {
+                      setSelectedDate(todayDate);
+                      setTimeout(() => {
+                        window.scrollTo({
+                          top: document.body.scrollHeight,
+                          behavior: "smooth",
+                        });
+                      }, 300);
+                    }}
+                    className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/30 transition"
+                  >
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Write for Today
+                  </Button>
+                )}
+
                 {!isSignedIn && (
                   <button
                     onClick={() => router.push("/sign-in")}
@@ -297,43 +326,133 @@ export default function LogBook() {
           </div>
         </main>
 
-        {/* Writing Area */}
-        <div className="sticky bottom-0 left-0 right-0 border-t border-slate-800 bg-slate-900/70 backdrop-blur-md p-4">
-          <div className="relative max-w-3xl mx-auto">
-            {/* Input Box with Button Inside */}
-            <div className="relative">
-              <Textarea
-                placeholder={
-                  isSignedIn
-                    ? "Write your thought..."
-                    : "Login to start writing your thoughts..."
-                }
-                value={thought}
-                onChange={(e) => setThought(e.target.value)}
-                disabled={!isSignedIn}
-                rows={3}
-                className={`w-full pr-14 rounded-2xl px-4 py-3 bg-slate-950/70 text-slate-100 border border-slate-700/70 placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 resize-none ${
-                  !isSignedIn ? "opacity-50 cursor-not-allowed" : ""
-                }`}
-              />
-
-              {/* Floating Send Button */}
-              <motion.div
-                whileTap={{ scale: 0.9 }}
-                className="absolute bottom-3 right-3"
-              >
-                <Button
-                  size="icon"
-                  onClick={handleSave}
+        {/* Fixed Writing Area / FAB */}
+        {isToday ? (
+          <div className="fixed bottom-0 left-0 right-0 md:left-64 z-20 border-t border-slate-800 bg-slate-900/70 backdrop-blur-md p-4">
+            <div className="relative max-w-3xl mx-auto">
+              <div className="relative">
+                <Textarea
+                  placeholder={
+                    !isSignedIn
+                      ? "Login to start writing your thoughts..."
+                      : "Write your thought..."
+                  }
+                  value={thought}
+                  onChange={(e) => setThought(e.target.value)}
                   disabled={!isSignedIn}
-                  className="h-10 w-10 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 shadow-md shadow-indigo-600/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  rows={3}
+                  className={`w-full pr-14 rounded-2xl px-4 py-3 bg-slate-950/70 text-slate-100 border border-slate-700/70 placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 resize-none ${
+                    !isSignedIn ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
+                />
+
+                {/* Floating Send Button */}
+                <motion.div
+                  whileTap={{ scale: 0.9 }}
+                  className="absolute bottom-3 right-3"
                 >
-                  <Send size={18} className="text-white" />
-                </Button>
-              </motion.div>
+                  <Button
+                    size="icon"
+                    onClick={handleSave}
+                    disabled={!isSignedIn}
+                    className="h-10 w-10 rounded-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 shadow-md shadow-indigo-600/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Send size={18} className="text-white" />
+                  </Button>
+                </motion.div>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          isSignedIn &&
+          !isToday && (
+            <div className="fixed bottom-0 left-0 right-0 md:left-64 z-20 border-t border-slate-800 bg-gradient-to-r from-slate-900/90 to-slate-950/90 backdrop-blur-lg p-6 flex justify-center md:justify-end">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+              >
+                {/* Desktop CTA Button */}
+                <Button
+                  onClick={() => {
+                    setSelectedDate(todayDate);
+                    setTimeout(() => {
+                      window.scrollTo({
+                        top: document.body.scrollHeight,
+                        behavior: "smooth",
+                      });
+                    }, 200);
+                  }}
+                  className="hidden md:flex px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-indigo-400 
+                     hover:from-indigo-500 hover:via-indigo-400 hover:to-indigo-300 
+                     text-white font-semibold shadow-lg shadow-indigo-600/40 
+                     transition-all duration-300 items-center gap-2 group"
+                >
+                  <PlusCircle
+                    size={20}
+                    className="transition-transform duration-300 group-hover:rotate-90"
+                  />
+                  <span className="tracking-wide">Write for Today</span>
+                  <Sparkles
+                    size={18}
+                    className="text-yellow-300 opacity-0 group-hover:opacity-100 transition duration-300"
+                  />
+                </Button>
+
+                {/* Mobile FAB */}
+                <motion.button
+                  onClick={() => {
+                    if (!fabExpanded) {
+                      setFabExpanded(true);
+                    } else {
+                      setSelectedDate(todayDate);
+                      setTimeout(() => {
+                        window.scrollTo({
+                          top: document.body.scrollHeight,
+                          behavior: "smooth",
+                        });
+                      }, 200);
+                      setFabExpanded(false);
+                    }
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`md:hidden fixed bottom-20 right-6 flex items-center justify-center 
+                     rounded-full shadow-lg shadow-indigo-600/40 overflow-hidden
+                     bg-gradient-to-r from-indigo-600 to-indigo-500 
+                     text-white transition-all duration-300`}
+                  style={{
+                    width: fabExpanded ? "180px" : "56px",
+                    height: "56px",
+                  }}
+                >
+                  <motion.div
+                    initial={{ opacity: 1 }}
+                    animate={{ opacity: fabExpanded ? 0 : 1 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute"
+                  >
+                    <PlusCircle size={26} />
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{
+                      opacity: fabExpanded ? 1 : 0,
+                      x: fabExpanded ? 0 : 20,
+                    }}
+                    transition={{ duration: 0.3 }}
+                    className="flex items-center gap-2"
+                  >
+                    <PlusCircle size={20} className="flex-shrink-0" />
+                    <span className="font-medium tracking-wide">
+                      Write for Today
+                    </span>
+                  </motion.div>
+                </motion.button>
+              </motion.div>
+            </div>
+          )
+        )}
       </div>
     </div>
   );
